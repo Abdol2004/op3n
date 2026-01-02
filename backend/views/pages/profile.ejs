@@ -1,0 +1,76 @@
+<%- include('../partials/header', { title: 'Profile' }) %>
+
+<div class="dashboard">
+  <div class="container">
+    <div class="dashboard-header">
+      <div class="dashboard-title">
+        <h1>Profile</h1>
+        <p>Your account details</p>
+      </div>
+      
+      <div class="dashboard-stats">
+        <div class="stat-card">
+          <div class="stat-value"><%= user.savedGigs.length %></div>
+          <div class="stat-label">Saved</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value"><%= user.savedGigs.filter(g => g.status === 'applied').length %></div>
+          <div class="stat-label">Applied</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="gigs-grid">
+      <div class="gig-card">
+        <h3 style="margin-bottom: 1.5rem;">
+          <i class="fas fa-user"></i> Account Information
+        </h3>
+        
+        <div style="display: grid; gap: 1rem;">
+          <div style="display: flex; justify-content: space-between; padding: 1rem 0; border-bottom: 1px solid var(--border);">
+            <span class="text-muted">Username</span>
+            <strong><%= user.username %></strong>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; padding: 1rem 0; border-bottom: 1px solid var(--border);">
+            <span class="text-muted">Email</span>
+            <strong><%= user.email %></strong>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; padding: 1rem 0; border-bottom: 1px solid var(--border);">
+            <span class="text-muted">Status</span>
+            <% if (user.isActivePremium()) { %>
+              <span class="badge-premium">
+                <i class="fas fa-crown"></i> Premium
+              </span>
+            <% } else { %>
+              <span style="color: var(--text-muted);">Free</span>
+            <% } %>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; padding: 1rem 0;">
+            <span class="text-muted">Member Since</span>
+            <strong><%= new Date(user.createdAt).toLocaleDateString() %></strong>
+          </div>
+        </div>
+      </div>
+      
+      <% if (!user.isActivePremium()) { %>
+        <div class="gig-card" style="background: linear-gradient(135deg, rgba(199, 125, 255, 0.1) 0%, rgba(157, 78, 221, 0.1) 100%); border-color: var(--lilac);">
+          <h3 style="margin-bottom: 1rem;">
+            <i class="fas fa-crown"></i> Upgrade to Premium
+          </h3>
+          <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+            Get unlimited gigs, Telegram alerts, and priority support for just $5/month
+          </p>
+          <a href="/premium" class="btn btn-primary btn-full">
+            <i class="fas fa-rocket"></i>
+            <span>Learn More</span>
+          </a>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

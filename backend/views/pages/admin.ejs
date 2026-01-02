@@ -1,0 +1,135 @@
+<%- include('../partials/header', { title: 'Admin Panel' }) %>
+
+<div class="admin-page">
+  <div class="container">
+    <h1>
+      <i class="fas fa-shield-alt"></i>
+      Admin Panel
+    </h1>
+    
+    <div class="admin-stats">
+      <div class="stat-card">
+        <div class="stat-value"><%= stats.totalUsers %></div>
+        <div class="stat-label">Total Users</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value"><%= stats.premiumUsers %></div>
+        <div class="stat-label">Premium</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value"><%= stats.totalGigs %></div>
+        <div class="stat-label">Total Gigs</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value"><%= stats.todayGigs %></div>
+        <div class="stat-label">Today</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value"><%= stats.hotCakeGigs %></div>
+        <div class="stat-label">Hot Cake</div>
+      </div>
+    </div>
+    
+    <div class="admin-section">
+      <h2>
+        <i class="fas fa-user-plus"></i>
+        Make User Premium
+      </h2>
+      
+      <form onsubmit="makePremium(event)" class="admin-form">
+        <input type="text" name="username" placeholder="Username" required>
+        <input type="text" name="telegramUsername" placeholder="Telegram Username (optional)">
+        <input type="text" name="telegramChatId" placeholder="Telegram Chat ID (optional)">
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-crown"></i>
+          <span>Make Premium</span>
+        </button>
+      </form>
+    </div>
+    
+    <div class="admin-section">
+      <h2>
+        <i class="fas fa-crown"></i>
+        Premium Users (<%= premiumUsers.length %>)
+      </h2>
+      
+      <div class="users-list">
+        <% premiumUsers.forEach(user => { %>
+          <div class="user-item">
+            <div>
+              <strong><%= user.username %></strong>
+              <div class="text-muted"><%= user.email %></div>
+            </div>
+            <span class="badge-premium">
+              <i class="fas fa-crown"></i> Premium
+            </span>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+    
+    <div class="admin-section">
+      <h2>
+        <i class="fas fa-briefcase"></i>
+        Recent Gigs (Top 50)
+      </h2>
+      
+      <div class="gigs-list">
+        <% recentGigs.forEach(gig => { %>
+          <div class="gig-item">
+            <div class="gig-info">
+              <strong>[<%= gig.score %>]</strong>
+              <% if (gig.isHotCake) { %>
+                <span class="hot-cake-badge">
+                  <i class="fas fa-fire"></i> HOT
+                </span>
+              <% } %>
+              <%= gig.text.substring(0, 120) %>...
+            </div>
+            <button onclick="deleteGig('<%= gig._id %>')" class="btn btn-danger">
+              <i class="fas fa-trash"></i> Delete
+            </button>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function makePremium(e) {
+  e.preventDefault();
+  const form = e.target;
+  const data = {
+    username: form.username.value,
+    telegramUsername: form.telegramUsername.value,
+    telegramChatId: form.telegramChatId.value
+  };
+  
+  fetch('/admin/<%= adminCode %>/make-premium', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  .then(r => r.json())
+  .then(() => {
+    alert('User made premium!');
+    location.reload();
+  })
+  .catch(err => alert('Error: ' + err.message));
+}
+
+function deleteGig(id) {
+  if (!confirm('Delete this gig?')) return;
+  
+  fetch('/admin/<%= adminCode %>/delete-gig/' + id, { method: 'POST' })
+    .then(r => r.json())
+    .then(() => {
+      alert('Gig deleted!');
+      location.reload();
+    })
+    .catch(err => alert('Error: ' + err.message));
+}
+</script>
+
+<%- include('../partials/footer') %>

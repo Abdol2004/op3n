@@ -1,0 +1,61 @@
+<%- include('../partials/header', { title: 'Saved Gigs' }) %>
+
+<div class="dashboard">
+  <div class="container">
+    <div class="dashboard-header">
+      <div class="dashboard-title">
+        <h1>Saved Gigs</h1>
+        <p>Your bookmarked opportunities</p>
+      </div>
+    </div>
+    
+    <% if (gigs.length === 0) { %>
+      <div class="empty-state">
+        <i class="fas fa-bookmark"></i>
+        <h3>No Saved Gigs</h3>
+        <p>Save gigs from the dashboard to track them here</p>
+        <a href="/dashboard" class="btn btn-primary">
+          <i class="fas fa-th-large"></i>
+          <span>Go to Dashboard</span>
+        </a>
+      </div>
+    <% } else { %>
+      <div class="gigs-grid">
+        <% gigs.forEach(gig => { %>
+          <div class="gig-card">
+            <div class="gig-header">
+              <div class="gig-author">
+                <div class="gig-author-avatar">
+                  <%= gig.author.username.substring(0, 2).toUpperCase() %>
+                </div>
+                <div class="gig-author-info">
+                  <strong>
+                    @<%= gig.author.username %>
+                    <% if (gig.author.verified) { %>
+                      <i class="fas fa-check-circle verified-badge"></i>
+                    <% } %>
+                  </strong>
+                </div>
+              </div>
+              
+              <span class="gig-score <%= gig.score >= 70 ? 'score-high' : gig.score >= 50 ? 'score-medium' : 'score-low' %>">
+                <%= gig.score %>/100
+              </span>
+            </div>
+            
+            <div class="gig-text"><%= gig.text %></div>
+            
+            <div class="gig-actions">
+              <a href="<%= gig.url %>" target="_blank" class="btn btn-primary">
+                <i class="fas fa-external-link-alt"></i>
+                <span>View on X</span>
+              </a>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

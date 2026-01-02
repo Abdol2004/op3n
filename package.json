@@ -1,0 +1,36 @@
+{
+  "name": "op3nhunt",
+  "version": "2.0.0",
+  "description": "Find Web3 Jobs Before Everyone Else - By NexoraStack",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "nodemon backend/server.js"
+  },
+  "keywords": [
+    "web3",
+    "jobs",
+    "crypto",
+    "blockchain",
+    "ambassador",
+    "hiring"
+  ],
+  "author": "NexoraStack (https://x.com/nexorastack)",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "bcryptjs": "^2.4.3",
+    "connect-mongo": "^5.1.0",
+    "dotenv": "^16.3.1",
+    "ejs": "^3.1.9",
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "mongoose": "^8.0.0",
+    "node-cron": "^3.0.3",
+    "node-telegram-bot-api": "^0.67.0",
+    "playwright": "^1.40.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}

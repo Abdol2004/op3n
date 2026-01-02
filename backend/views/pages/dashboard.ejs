@@ -1,0 +1,179 @@
+<%- include('../partials/header', { title: 'Dashboard' }) %>
+
+<div class="dashboard">
+  <div class="container">
+    <div class="dashboard-header">
+      <div class="dashboard-title">
+        <h1>Dashboard</h1>
+        <p>Latest Web3 opportunities</p>
+      </div>
+      
+      <div class="dashboard-stats">
+        <div class="stat-card">
+          <div class="stat-value"><%= totalGigs %></div>
+          <div class="stat-label">Total Gigs</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value"><%= gigs.filter(g => g.isHotCake).length %></div>
+          <div class="stat-label">Hot Cake</div>
+        </div>
+        <% if (!isPremium) { %>
+          <div class="stat-card">
+            <div class="stat-value"><%= dailyViews %>/20</div>
+            <div class="stat-label">Today's Views</div>
+          </div>
+        <% } %>
+      </div>
+    </div>
+    
+    <% if (gigs.length === 0) { %>
+      <div class="empty-state">
+        <i class="fas fa-search"></i>
+        <h3>No Gigs Yet</h3>
+        <p>The scanner runs every 10 minutes. Check back soon!</p>
+      </div>
+    <% } else { %>
+      <div class="gigs-grid">
+        <% gigs.forEach((gig, index) => { %>
+          <% const isLocked = !isPremium && index >= 20; %>
+          <div class="gig-card <%= isLocked ? 'locked-gig' : '' %>">
+            <% if (isLocked) { %>
+              <div class="lock-overlay">
+                <i class="fas fa-lock"></i>
+                <p>Upgrade to Premium</p>
+                <a href="/premium" class="btn btn-primary btn-sm">
+                  <i class="fas fa-crown"></i> Upgrade
+                </a>
+              </div>
+            <% } %>
+            
+            <div class="gig-header">
+              <div class="gig-author">
+                <div class="gig-author-avatar">
+                  <%= gig.author.username.substring(0, 2).toUpperCase() %>
+                </div>
+                <div class="gig-author-info">
+                  <strong>
+                    @<%= gig.author.username %>
+                    <% if (gig.author.verified) { %>
+                      <i class="fas fa-check-circle verified-badge"></i>
+                    <% } %>
+                  </strong>
+                  <div class="text-muted"><%= gig.author.displayName %></div>
+                </div>
+              </div>
+              
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <span class="gig-score <%= gig.score >= 70 ? 'score-high' : gig.score >= 50 ? 'score-medium' : 'score-low' %>">
+                  <%= gig.score %>/100
+                </span>
+                
+                <% if (gig.isHotCake) { %>
+                  <span class="hot-cake-badge">
+                    <i class="fas fa-fire"></i> HOT CAKE
+                  </span>
+                <% } %>
+              </div>
+            </div>
+            
+            <div class="gig-text"><%= gig.text %></div>
+            
+            <div class="gig-meta">
+              <span class="gig-meta-item">
+                <i class="fas fa-heart"></i>
+                <%= gig.engagement.likes || 0 %>
+              </span>
+              <span class="gig-meta-item">
+                <i class="fas fa-retweet"></i>
+                <%= gig.engagement.retweets || 0 %>
+              </span>
+              <span class="gig-meta-item">
+                <i class="fas fa-comment"></i>
+                <%= gig.engagement.replies || 0 %>
+              </span>
+              <% if (gig.links && gig.links.length > 0) { %>
+                <span class="gig-meta-item">
+                  <i class="fas fa-link"></i>
+                  Has Link
+                </span>
+              <% } %>
+            </div>
+            
+            <% if (!isLocked) { %>
+              <div class="gig-actions">
+                <a href="javascript:void(0)" onclick="viewGig('<%= gig.url %>', '<%= gig._id %>')" class="btn btn-primary">
+                  <i class="fas fa-external-link-alt"></i>
+                  <span>View on X</span>
+                </a>
+                
+                <button onclick="saveGig('<%= gig._id %>')" class="btn btn-secondary">
+                  <i class="fas fa-bookmark"></i>
+                  <span>Save</span>
+                </button>
+                
+                <button onclick="applyGig('<%= gig._id %>')" class="btn btn-success">
+                  <i class="fas fa-check"></i>
+                  <span>Applied</span>
+                </button>
+              </div>
+              
+              <div class="gig-time">
+                <i class="fas fa-clock"></i>
+                Posted <%= new Date(gig.timestamp).toLocaleString() %>
+              </div>
+            <% } %>
+          </div>
+        <% }); %>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<script>
+function viewGig(url, gigId) {
+  fetch(`/view-gig/${gigId}`, { method: 'POST' })
+    .then(r => r.json())
+    .then(data => {
+      if (data.limitReached) {
+        alert('Daily limit reached! Upgrade to Premium for unlimited access.');
+        window.location.href = '/premium';
+      } else {
+        window.open(url, '_blank');
+      }
+    })
+    .catch(err => {
+      console.error('Error:', err);
+      window.open(url, '_blank');
+    });
+}
+
+function saveGig(id) {
+  fetch(`/save-gig/${id}`, { method: 'POST' })
+    .then(r => r.json())
+    .then(data => {
+      if (data.limitReached) {
+        alert('Daily limit reached! Upgrade to Premium for unlimited access.');
+        window.location.href = '/premium';
+      } else {
+        alert('Gig saved!');
+      }
+    })
+    .catch(err => alert('Error saving gig'));
+}
+
+function applyGig(id) {
+  fetch(`/apply-gig/${id}`, { method: 'POST' })
+    .then(r => r.json())
+    .then(data => {
+      if (data.limitReached) {
+        alert('Daily limit reached! Upgrade to Premium for unlimited access.');
+        window.location.href = '/premium';
+      } else {
+        alert('Marked as applied!');
+      }
+    })
+    .catch(err => alert('Error marking as applied'));
+}
+</script>
+
+<%- include('../partials/footer') %>

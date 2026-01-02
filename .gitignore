@@ -1,0 +1,8 @@
+node_modules/
+.env
+backend/data/auth.json
+logs/
+*.log
+.DS_Store
+*.swp
+.vscode/

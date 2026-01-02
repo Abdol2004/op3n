@@ -1,0 +1,40 @@
+OP3NHUNT - QUICK REFERENCE
+==========================
+
+INSTALLATION:
+1. Extract ZIP
+2. npm install
+3. cp .env.example .env (edit with your settings)
+4. node backend/scripts/save-session.js
+5. npm start
+
+REQUIRED ENV VARS:
+- MONGODB_URI (from MongoDB Atlas)
+- SESSION_SECRET (any random string)
+- ADMIN_SECRET_CODE (your secret number)
+
+OPTIONAL ENV VARS:
+- TELEGRAM_BOT_TOKEN (from @BotFather)
+- TELEGRAM_USERNAME (your bot username)
+
+URLS:
+- App: http://localhost:3000
+- Admin: http://localhost:3000/admin/YOUR_CODE
+
+ADMIN FEATURES:
+- Make user premium
+- View premium users
+- Delete gigs
+- See stats
+
+TECH STACK:
+- Node.js + Express + EJS
+- MongoDB + Mongoose
+- Playwright (scraping)
+- Telegram Bot API
+
+BY NEXORASTACK:
+- X: https://x.com/nexorastack
+- Telegram: @Op3nHuntbot
+
+WORTH $500/MONTH - CHARGING $5/MONTH
