@@ -895,7 +895,7 @@ body {
   
   .navbar .container {
     padding: 1.25rem 0.875rem;
-    min-height: 75px;
+    min-height: 105px;
   }
   
   .dashboard-header {
@@ -928,7 +928,7 @@ body {
   
   .navbar .container {
     padding: 1.5rem 0.75rem;
-    min-height: 80px;
+    min-height: 100px;
   }
   
   .hero {
