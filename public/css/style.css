@@ -48,6 +48,7 @@ body {
   margin: 0 auto;
   padding: 0 1rem;
   width: 100%;
+  height: 100px;
 }
 
 /* ============= NAVBAR - TALL HEIGHT ============= */
@@ -351,7 +352,7 @@ body {
   border-radius: 8px;
   padding: 0.625rem;
   transition: all 0.3s;
-  width: 70%;
+  width: 90%;
 }
 
 .gig-card:hover {
@@ -895,7 +896,7 @@ body {
   
   .navbar .container {
     padding: 1.25rem 0.875rem;
-    min-height: 105px;
+    min-height: 135px;
   }
   
   .dashboard-header {
