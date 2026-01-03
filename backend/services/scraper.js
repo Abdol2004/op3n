@@ -1,4 +1,4 @@
-// backend/services/scraper.js - OPTIMIZED CATEGORY-BY-CATEGORY JOB HUNTER
+// backend/services/scraper.js - FIXED: Better Deduplication
 const { chromium } = require('playwright');
 const path = require('path');
 const fs = require('fs');
@@ -7,9 +7,10 @@ class Scraper {
   constructor() {
     this.authPath = path.join(__dirname, '../data/auth.json');
     
-    // ORGANIZED BY PRIORITY CATEGORIES
+    // Track all seen tweet IDs across entire scan session
+    this.globalSeenTweets = new Set();
+    
     this.categories = {
-      // Category 1: SUPER HIGH PRIORITY (Check First & Most Often)
       topTier: {
         name: 'Ambassador & KOL Programs',
         keywords: [
@@ -22,7 +23,6 @@ class Scraper {
         scanFrequency: 'every-30min'
       },
       
-      // Category 2: HIGH PRIORITY
       community: {
         name: 'Community Management',
         keywords: [
@@ -35,7 +35,6 @@ class Scraper {
         scanFrequency: 'hourly'
       },
       
-      // Category 3: HIGH PRIORITY
       socialMedia: {
         name: 'Social Media Management',
         keywords: [
@@ -47,7 +46,6 @@ class Scraper {
         scanFrequency: 'hourly'
       },
       
-      // Category 4: MEDIUM-HIGH PRIORITY
       contentCreation: {
         name: 'Content Creation',
         keywords: [
@@ -60,7 +58,6 @@ class Scraper {
         scanFrequency: '2-hours'
       },
       
-      // Category 5: MEDIUM PRIORITY
       marketing: {
         name: 'Marketing & Growth',
         keywords: [
@@ -73,7 +70,6 @@ class Scraper {
         scanFrequency: '2-hours'
       },
       
-      // Category 6: MEDIUM PRIORITY
       writing: {
         name: 'Content Writing',
         keywords: [
@@ -85,7 +81,6 @@ class Scraper {
         scanFrequency: '2-hours'
       },
       
-      // Category 7: REGULAR PRIORITY
       design: {
         name: 'Design & Creative',
         keywords: [
@@ -97,7 +92,6 @@ class Scraper {
         scanFrequency: '3-hours'
       },
       
-      // Category 8: REGULAR PRIORITY
       internships: {
         name: 'Internships',
         keywords: [
@@ -110,7 +104,6 @@ class Scraper {
         scanFrequency: '3-hours'
       },
       
-      // Category 9: LOWER PRIORITY
       operations: {
         name: 'Operations & Support',
         keywords: [
@@ -122,7 +115,6 @@ class Scraper {
         scanFrequency: '4-hours'
       },
       
-      // Category 10: CATCH-ALL (General Hiring)
       general: {
         name: 'General Hiring Posts',
         keywords: [
@@ -139,17 +131,15 @@ class Scraper {
     console.log(`💎 Loaded ${Object.keys(this.categories).length} job categories`);
   }
 
-  /**
-   * MAIN METHOD: Scan category by category
-   * @param {string|null} specificCategory - If provided, only scan this category
-   * @param {number} tweetsPerKeyword - How many tweets to get per keyword (default: 15)
-   */
   async scanByCategory(specificCategory = null, tweetsPerKeyword = 15) {
     if (!this.checkAuth()) {
       console.error('❌ No auth.json found. Run: node backend/scripts/save-session.js');
       return { results: [], totalTweets: 0 };
     }
 
+    // Reset global seen tweets at start of scan
+    this.globalSeenTweets.clear();
+    
     const allResults = [];
     let browser = null;
     
@@ -176,16 +166,13 @@ class Scraper {
 
       const page = await context.newPage();
       
-      // Determine which categories to scan
       const categoriesToScan = specificCategory 
         ? { [specificCategory]: this.categories[specificCategory] }
         : this.categories;
       
-      // Sort by priority
       const sortedCategories = Object.entries(categoriesToScan)
         .sort((a, b) => a[1].priority - b[1].priority);
       
-      // Scan each category
       for (const [categoryKey, category] of sortedCategories) {
         console.log(`\n${'='.repeat(60)}`);
         console.log(`📁 CATEGORY: ${category.name.toUpperCase()}`);
@@ -199,7 +186,7 @@ class Scraper {
           tweetsPerKeyword
         );
         
-        console.log(`\n✅ Category "${category.name}" complete: ${categoryResults.length} tweets found\n`);
+        console.log(`\n✅ Category "${category.name}" complete: ${categoryResults.length} unique tweets\n`);
         
         allResults.push({
           category: categoryKey,
@@ -209,7 +196,6 @@ class Scraper {
           count: categoryResults.length
         });
         
-        // Cool down between categories (avoid rate limits)
         if (sortedCategories.indexOf([categoryKey, category]) < sortedCategories.length - 1) {
           console.log('💤 Cooling down before next category (5s)...\n');
           await this.sleep(5000);
@@ -218,13 +204,13 @@ class Scraper {
       
       await browser.close();
       
-      // Summary
       const totalTweets = allResults.reduce((sum, cat) => sum + cat.count, 0);
       console.log(`\n${'='.repeat(60)}`);
       console.log(`🎯 SCAN COMPLETE`);
       console.log(`${'='.repeat(60)}`);
       console.log(`📊 Categories scanned: ${allResults.length}`);
-      console.log(`📝 Total tweets found: ${totalTweets}`);
+      console.log(`📝 Total unique tweets: ${totalTweets}`);
+      console.log(`🔄 Duplicates filtered: ${this.globalSeenTweets.size - totalTweets}`);
       console.log(`${'='.repeat(60)}\n`);
       
       return {
@@ -240,9 +226,6 @@ class Scraper {
     }
   }
 
-  /**
-   * Scan a single category
-   */
   async scanCategory(page, category, categoryKey, tweetsPerKeyword) {
     const categoryTweets = [];
     const keywords = category.keywords;
@@ -255,17 +238,22 @@ class Scraper {
         
         const tweets = await this.searchSingleQuery(page, keyword, tweetsPerKeyword);
         
+        // Filter out globally seen tweets BEFORE adding
+        const newTweets = tweets.filter(tweet => !this.globalSeenTweets.has(tweet.id));
+        
         // Tag tweets with category
-        tweets.forEach(tweet => {
+        newTweets.forEach(tweet => {
           tweet.category = categoryKey;
           tweet.categoryName = category.name;
           tweet.searchKeyword = keyword;
+          this.globalSeenTweets.add(tweet.id); // Track globally
         });
         
-        categoryTweets.push(...tweets);
-        console.log(`      ✓ Found ${tweets.length} tweets`);
+        categoryTweets.push(...newTweets);
         
-        // Smart delay between keywords (faster within category)
+        const duplicatesFiltered = tweets.length - newTweets.length;
+        console.log(`      ✓ Found ${newTweets.length} unique tweets (${duplicatesFiltered} duplicates filtered)`);
+        
         await this.sleep(1200);
         
       } catch (error) {
@@ -273,27 +261,22 @@ class Scraper {
       }
     }
     
-    // Deduplicate within category
-    return this.deduplicateTweets(categoryTweets);
+    return categoryTweets;
   }
 
-  /**
-   * Search a single query on Twitter
-   */
   async searchSingleQuery(page, query, maxResults = 15) {
     try {
-      // AGGRESSIVE ANTI-SPAM FILTERS
       const filters = [
-        '-RT',                          // No retweets
-        'lang:en',                      // English only
-        '-filter:replies',              // No replies
-        'min_faves:1',                  // At least 1 like
-        '-"rt to enter"',               // Block RT farming
-        '-"retweet and follow"',        // Block follow farming
-        '-"tag 3 friends"',             // Block tag farming
-        '-"like and retweet"',          // Block engagement farming
-        '-airdrop',                     // Block airdrops (usually spam)
-        '-giveaway'                     // Block giveaways
+        '-RT',
+        'lang:en',
+        '-filter:replies',
+        'min_faves:1',
+        '-"rt to enter"',
+        '-"retweet and follow"',
+        '-"tag 3 friends"',
+        '-"like and retweet"',
+        '-airdrop',
+        '-giveaway'
       ];
       
       const fullQuery = `${query} ${filters.join(' ')}`;
@@ -303,13 +286,11 @@ class Scraper {
       await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
       await page.waitForTimeout(1500);
       
-      // Scroll to load tweets (optimized - less scrolling)
       for (let i = 0; i < 3; i++) {
         await page.evaluate(() => window.scrollBy(0, 1200));
         await page.waitForTimeout(600);
       }
       
-      // Extract tweets
       const tweets = await page.evaluate((searchQuery) => {
         const results = [];
         const articles = document.querySelectorAll('article[data-testid="tweet"]');
@@ -320,9 +301,8 @@ class Scraper {
             if (!textEl) return;
             
             const text = textEl.innerText;
-            if (!text || text.length < 30) return; // Minimum length
+            if (!text || text.length < 30) return;
             
-            // CRITICAL: Block engagement farming in extraction
             const lowerText = text.toLowerCase();
             const farmingPhrases = [
               'rt to enter', 'retweet to win', 'retweet and follow',
@@ -331,7 +311,7 @@ class Scraper {
             ];
             
             if (farmingPhrases.some(phrase => lowerText.includes(phrase))) {
-              return; // Skip this tweet
+              return;
             }
             
             const linkEl = article.querySelector('a[href*="/status/"]');
@@ -369,7 +349,6 @@ class Scraper {
             const retweets = getCount('[data-testid="retweet"]');
             const replies = getCount('[data-testid="reply"]');
             
-            // Extract external links
             const allLinks = article.querySelectorAll('a[href]');
             const externalLinks = [];
             allLinks.forEach(a => {
@@ -407,7 +386,7 @@ class Scraper {
             });
             
           } catch (err) {
-            // Silent fail for individual tweets
+            // Silent fail
           }
         });
         
@@ -422,9 +401,6 @@ class Scraper {
     }
   }
 
-  /**
-   * Deduplicate tweets by ID
-   */
   deduplicateTweets(tweets) {
     const seen = new Set();
     const unique = [];
@@ -439,9 +415,6 @@ class Scraper {
     return unique;
   }
 
-  /**
-   * Check if authenticated
-   */
   checkAuth() {
     try {
       if (!fs.existsSync(this.authPath)) {
@@ -455,16 +428,10 @@ class Scraper {
     }
   }
 
-  /**
-   * Sleep utility
-   */
   async sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  /**
-   * Get priority categories (for frequent scanning)
-   */
   getPriorityCategories(priority = 1) {
     return Object.entries(this.categories)
       .filter(([_, cat]) => cat.priority === priority)
