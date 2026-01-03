@@ -48,7 +48,6 @@ body {
   margin: 0 auto;
   padding: 0 1rem;
   width: 100%;
-  height: 100px;
 }
 
 /* ============= NAVBAR - TALL HEIGHT ============= */
@@ -352,7 +351,7 @@ body {
   border-radius: 8px;
   padding: 0.625rem;
   transition: all 0.3s;
-  width: 90%;
+  width: 95%;
 }
 
 .gig-card:hover {
@@ -876,6 +875,7 @@ body {
     top: 100%;
     left: 0;
     right: 0;
+    bottom: 10%;
     background: var(--bg-secondary);
     border-bottom: 1px solid var(--border);
     flex-direction: column;
@@ -896,7 +896,7 @@ body {
   
   .navbar .container {
     padding: 1.25rem 0.875rem;
-    min-height: 135px;
+    min-height: 75px;
   }
   
   .dashboard-header {
@@ -929,7 +929,7 @@ body {
   
   .navbar .container {
     padding: 1.5rem 0.75rem;
-    min-height: 100px;
+    min-height: 80px;
   }
   
   .hero {
